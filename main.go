@@ -14,7 +14,7 @@ func main() {
 		return
 	}
 
-	_, err = db.NewDriver(cfg)
+	driver, err := db.NewDriver(cfg)
 
 	if err != nil {
 		println(err.Error())
@@ -23,5 +23,6 @@ func main() {
 
 	printBanner()
 
-	go service.Run(cfg)
+	srv := service.NewService(cfg, driver)
+	srv.Run()
 }

@@ -37,7 +37,13 @@ func (s *Service) Run() {
 	providers := make([]*Provider, 0)
 
 	for _, p := range s.config.OAuthProviders {
-		providers = append(providers, NewProvider(&p, s.getRedirectUrl(p.Name)))
+		provider, err := NewProvider(&p, s.getRedirectUrl(p.Name))
+		if err != nil {
+			s.log.Error("Failed to create provider", "provider", p.Name, "error", err)
+			return
+		}
+
+		providers = append(providers, provider)
 	}
 
 	if len(providers) == 0 {
@@ -64,7 +70,7 @@ func (s *Service) Run() {
 		for _, provider := range providers {
 			if provider.Name == prov {
 				// redirect
-				url := provider.Config.AuthCodeURL("state", oauth2.AccessTypeOffline)
+				url := provider.config.AuthCodeURL("state", oauth2.AccessTypeOffline)
 				c.Redirect(http.StatusFound, url)
 				return
 			}
@@ -73,13 +79,13 @@ func (s *Service) Run() {
 		c.Writer.WriteHeader(http.StatusNotFound)
 	})
 
-	r.GET("/oauth/callback/:provider", func(c *gin.Context) {
+	r.GET("/oauth/end/:provider", func(c *gin.Context) {
 		prov := c.Param("provider")
 
 		for _, provider := range providers {
 			if provider.Name == prov {
 				code := c.Query("code")
-				url, err := provider.Config.Exchange(context.Background(), code)
+				token, err := provider.config.Exchange(context.Background(), code)
 
 				if err != nil {
 					c.Writer.WriteHeader(http.StatusInternalServerError)
@@ -87,13 +93,25 @@ func (s *Service) Run() {
 					return
 				}
 
+				userInfo, err := provider.OICDProvider.UserInfo(context.Background(), provider.config.TokenSource(context.Background(), token))
+				if err != nil {
+					return
+				}
+
+				if err != nil {
+					c.Writer.WriteHeader(http.StatusInternalServerError)
+					s.log.Info("verifier error", "error", err)
+					return
+				}
+
+				s.log.Info("verified", "subject", userInfo.Subject)
 			}
 		}
 	})
 
 	r.Use(gin.Recovery())
 
-	err := r.Run(fmt.Sprintf("0.0.0.0:%d", conf.MainService.Port))
+	err := r.Run(fmt.Sprintf("0.0.0.0:%d", s.config.MainService.Port))
 
 	if err != nil {
 		s.log.Error("error running main service", "error", err)

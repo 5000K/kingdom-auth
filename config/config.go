@@ -5,37 +5,37 @@ import (
 )
 
 type OAuthConfig struct {
-	Name         string `yaml:"name" envDefault:""`
-	AuthUrl      string `yaml:"auth_url" envDefault:""`
-	TokenUrl     string `yaml:"token_url" envDefault:""`
-	ClientId     string `yaml:"client_id" envDefault:""`
-	ClientSecret string `yaml:"client_secret" envDefault:""`
+	Name         string   `yaml:"name"`
+	Url          string   `yaml:"url"`
+	ClientId     string   `yaml:"client_id"`
+	ClientSecret string   `yaml:"client_secret"`
+	Scopes       []string `yaml:"scopes"`
 }
 
 type Config struct {
-	ConfigPath string `env:"CONFIG_PATH" envDefault:"./config.yml"`
+	ConfigPath string `env:"CONFIG_PATH" env-default:"config.yml"`
 
 	Db struct {
 		// supported: "sqlite", "mysql", "postgres"
 		// default: sqlite
-		Type string `yaml:"type" env:"DB_TYPE" envDefault:"sqlite"`
+		Type string `yaml:"type" env:"DB_TYPE" env-default:"sqlite"`
 
 		// DSN=Database Source Name, see https://github.com/go-sql-driver/mysql#dsn-data-source-name
 		// default: kingdom-auth.db (useful default for the default of sqlite)
-		DSN string `yaml:"dsn" env:"DB_DSN" envDefault:"kingdom-auth.db"`
+		DSN string `yaml:"dsn" env:"DB_DSN" env-default:"kingdom-auth.db"`
 
 		// Guaranteed to be non-destructive by gorm
 		//
 		// Is allowed to be deactivated to give users more control,
 		// but might (and over time WILL) lead to the need to manually migrate after an update of kingdom-auth
-		RunMigrations bool `yaml:"run_migrations" env:"DB_RUN_MIGRATIONS" envDefault:"true"`
+		RunMigrations bool `yaml:"run_migrations" env:"DB_RUN_MIGRATIONS" env-default:"true"`
 	} `yaml:"db"`
 
 	OAuthProviders []OAuthConfig `yaml:"providers"`
 
 	MainService struct {
-		Port      int    `yaml:"port" envDefault:"14414"`
-		PublicUrl string `yaml:"public_url" envDefault:"http://localhost:14414"`
+		Port      int    `yaml:"port" env-default:"14414"`
+		PublicUrl string `yaml:"public_url" env-default:"http://localhost:14414"`
 	} `yaml:"main_service"`
 }
 
