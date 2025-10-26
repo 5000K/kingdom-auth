@@ -2,6 +2,9 @@ package service
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -25,18 +28,63 @@ type Service struct {
 	log    *slog.Logger
 	db     *db.Driver
 
-	key []byte
+	privateKey *rsa.PrivateKey
+	publicKey  *rsa.PublicKey
 }
 
 func NewService(config *config.Config, db *db.Driver) (*Service, error) {
+	// Load private key
+	privateKeyData, err := os.ReadFile(config.Token.PrivateKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read private key file: %w", err)
+	}
+
+	privateKeyBlock, _ := pem.Decode(privateKeyData)
+	if privateKeyBlock == nil {
+		return nil, fmt.Errorf("failed to decode PEM block containing private key")
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
+	if err != nil {
+		// Try PKCS8 format as fallback
+		keyInterface, err := x509.ParsePKCS8PrivateKey(privateKeyBlock.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse private key: %w", err)
+		}
+		var ok bool
+		privateKey, ok = keyInterface.(*rsa.PrivateKey)
+		if !ok {
+			return nil, fmt.Errorf("not an RSA private key")
+		}
+	}
+
+	// Load public key
+	publicKeyData, err := os.ReadFile(config.Token.PublicKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read public key file: %w", err)
+	}
+
+	publicKeyBlock, _ := pem.Decode(publicKeyData)
+	if publicKeyBlock == nil {
+		return nil, fmt.Errorf("failed to decode PEM block containing public key")
+	}
+
+	publicKeyInterface, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse public key: %w", err)
+	}
+
+	publicKey, ok := publicKeyInterface.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("not an RSA public key")
+	}
 
 	return &Service{
-		config: config,
-		db:     db,
-
-		key: []byte(config.Token.KeyPhrase),
-
-		log: slog.With("source", "auth-service"),
+		config:     config,
+		db:         db,
+		privateKey: privateKey,
+		publicKey:  publicKey,
+		log:        slog.With("source", "auth-service"),
 	}, nil
 }
 
@@ -45,7 +93,7 @@ func (s *Service) getRedirectUrl(providerName string) string {
 }
 
 func (s *Service) createRefreshTokenFor(user *db.User) (string, error) {
-	t := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
+	t := jwt.NewWithClaims(jwt.SigningMethodRS512, jwt.MapClaims{
 		"sub":                        fmt.Sprintf("%d", user.ID),
 		"iss":                        s.config.Token.Issuer,
 		"exp":                        time.Now().Add(time.Second * time.Duration(s.config.Token.RefreshTokenTTL)).Unix(),
@@ -53,13 +101,13 @@ func (s *Service) createRefreshTokenFor(user *db.User) (string, error) {
 		core.KingdomAuthVersionClaim: core.KingdomAuthVersion,
 	})
 
-	return t.SignedString(s.key)
+	return t.SignedString(s.privateKey)
 }
 
 func (s *Service) readRefreshToken(token string) (jwt.MapClaims, error) {
 	contents := jwt.MapClaims{}
 	tkn, err := jwt.ParseWithClaims(token, &contents, func(token *jwt.Token) (interface{}, error) {
-		return s.key, nil
+		return s.publicKey, nil
 	})
 
 	if err != nil {
@@ -85,7 +133,7 @@ func (s *Service) readRefreshToken(token string) (jwt.MapClaims, error) {
 func (s *Service) createAuthTokenFor(user *db.User) (string, int64, error) {
 	aud := s.config.Token.DefaultAudience
 
-	pud, err := user.GetPrivateUserdata()
+	pud, err := user.GetPublicUserdata()
 
 	if err == nil {
 		potentialAud, ok := pud["aud"].(string)
@@ -96,17 +144,17 @@ func (s *Service) createAuthTokenFor(user *db.User) (string, int64, error) {
 
 	exp := time.Now().Add(time.Second * time.Duration(s.config.Token.AuthTokenTTL)).Unix()
 
-	t := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
+	t := jwt.NewWithClaims(jwt.SigningMethodRS512, jwt.MapClaims{
 		"sub":                        fmt.Sprintf("%d", user.ID),
 		"aud":                        aud,
 		"iss":                        s.config.Token.Issuer,
 		"exp":                        exp,
 		"iat":                        time.Now().Unix(),
-		"public-data":                user.PublicData,
+		"public-data":                pud,
 		core.KingdomAuthVersionClaim: core.KingdomAuthVersion,
 	})
 
-	tk, err := t.SignedString(s.key)
+	tk, err := t.SignedString(s.privateKey)
 
 	return tk, exp, err
 }
@@ -114,7 +162,7 @@ func (s *Service) createAuthTokenFor(user *db.User) (string, int64, error) {
 func (s *Service) readAuthToken(token string) (jwt.MapClaims, error) {
 	contents := jwt.MapClaims{}
 	tkn, err := jwt.ParseWithClaims(token, &contents, func(token *jwt.Token) (interface{}, error) {
-		return s.key, nil
+		return s.publicKey, nil
 	})
 
 	if err != nil {
@@ -284,7 +332,10 @@ func (s *Service) Run() {
 		cookieString, err := c.Cookie(s.config.CookieName)
 
 		if err != nil {
-			c.Writer.WriteHeader(http.StatusInternalServerError)
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "no token",
+			})
+			return
 		}
 
 		tk, err := s.readRefreshToken(cookieString)
@@ -395,6 +446,64 @@ func (s *Service) Run() {
 		c.JSON(http.StatusOK, gin.H{
 			"token": at,
 			"exp":   exp,
+		})
+	})
+
+	r.GET("/validate", func(c *gin.Context) {
+		authParam := c.Query("token")
+
+		if authParam == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"valid": false,
+				"error": "no auth parameter provided",
+			})
+			return
+		}
+
+		tk, err := s.readAuthToken(authParam)
+
+		if err != nil {
+			if errors.Is(err, core.ErrTokenExpired) {
+				c.JSON(http.StatusOK, gin.H{
+					"valid": false,
+					"error": "token expired",
+				})
+				return
+			} else if errors.Is(err, core.ErrTokenInvalid) {
+				c.JSON(http.StatusOK, gin.H{
+					"valid": false,
+					"error": "token invalid",
+				})
+				return
+			} else if errors.Is(err, core.ErrInvalidSignature) {
+				c.JSON(http.StatusOK, gin.H{
+					"valid": false,
+					"error": "token signature invalid",
+				})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"valid": false,
+				"error": "token signature invalid",
+			})
+			return
+		}
+
+		version := tk[core.KingdomAuthVersionClaim]
+
+		if version != core.KingdomAuthVersion {
+			c.JSON(http.StatusOK, gin.H{
+				"valid":    false,
+				"error":    "version mismatch: token is from another format (older or newer)",
+				"expected": core.KingdomAuthVersion,
+				"actual":   version,
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"valid":  true,
+			"claims": tk,
 		})
 	})
 

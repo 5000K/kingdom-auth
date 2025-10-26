@@ -23,4 +23,25 @@ providers:
 ```
 
 # Key Setup
-kingdom-auth uses a key phrase to sign its JWTs. Set up a plenty long, random key for it
+
+kingdom-auth uses RSA keys (RS512) to sign its JWTs. You need to generate a private and public key pair:
+
+```bash
+# Generate private key (4096-bit RSA)
+openssl genrsa -out private_key.pem 4096
+
+# Extract public key from private key
+openssl rsa -in private_key.pem -pubout -out public_key.pem
+```
+
+**Important:** Keep your `private_key.pem` secure and never commit it to version control!  
+The public key (`public_key.pem`) can be shared with services that need to verify tokens.
+
+By default, kingdom-auth looks for these files in the project root directory. You can customize the paths in your config.yml:
+
+```yml
+token:
+  private_key_path: /path/to/private_key.pem  # defaults to: private_key.pem
+  public_key_path: /path/to/public_key.pem    # defaults to: public_key.pem
+  # ... other token config
+```

@@ -66,7 +66,7 @@ func (d *Driver) CreateUser() (*User, error) {
 		LastLogin:       time.UnixMilli(0),
 	}
 
-	_ = user.SetPrivateUserdata(UserData{
+	_ = user.SetPublicUserdata(UserData{
 		"aud": d.cfg.Token.DefaultAudience,
 	})
 

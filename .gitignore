@@ -36,3 +36,5 @@ go.work.sum
 /kingdom-auth.db
 /id_ecdsa
 /id_ecdsa.pub
+/private_key.pem
+/public_key.pem

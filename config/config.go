@@ -37,7 +37,14 @@ type Config struct {
 	OAuthProviders []OAuthConfig `yaml:"providers"`
 
 	Token struct {
+		// DEPRECATED: Use PrivateKeyPath instead for RSA signing
 		KeyPhrase string `yaml:"key_phrase" env:"KEY_Phrase"`
+
+		// Path to RSA private key file for RS512 signing
+		PrivateKeyPath string `yaml:"private_key_path" env:"PRIVATE_KEY_PATH" env-default:"private_key.pem"`
+
+		// Path to RSA public key file for RS512 verification
+		PublicKeyPath string `yaml:"public_key_path" env:"PUBLIC_KEY_PATH" env-default:"public_key.pem"`
 
 		// Time to live for the refresh token (in seconds). The refresh token is a long-lived cookie and bound to the core domain of the auth service.
 		// It'll be used to generate short-lived auth-tokens that can be used across your service.
