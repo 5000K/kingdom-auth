@@ -3,8 +3,9 @@ package core
 import "time"
 
 type Authentication struct {
-	Provider       string `json:"provider"`
-	ProviderUserId string `json:"provider_user_id"`
+	Provider string `json:"provider"`
+	Subject  string `json:"provider_user_id"`
+	Email    string `json:"email"`
 }
 
 type User struct {
@@ -17,6 +18,5 @@ type User struct {
 
 	// these just shortcuts: the first valid ones from the authentications
 
-	Email    string `json:"email"`
-	Username string `json:"username"`
+	Email string `json:"email"`
 }

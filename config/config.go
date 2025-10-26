@@ -15,6 +15,11 @@ type OAuthConfig struct {
 type Config struct {
 	ConfigPath string `env:"CONFIG_PATH" env-default:"config.yml"`
 
+	KeyPhrase string `yaml:"key_phrase" env:"KEY_Phrase"`
+
+	CookieName   string `yaml:"cookie_name" env:"COOKIE_NAME" env-default:"ka_token"`
+	CookieDomain string `yaml:"cookie_domain" env:"COOKIE_DOMAIN" env-default:"localhost"`
+
 	Db struct {
 		// supported: "sqlite", "mysql", "postgres"
 		// default: sqlite

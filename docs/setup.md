@@ -21,3 +21,6 @@ providers:
     
 # ... other config options
 ```
+
+# Key Setup
+kingdom-auth uses a key phrase to sign its JWTs. Set up a plenty long, random key for it

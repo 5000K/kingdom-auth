@@ -23,6 +23,12 @@ func main() {
 
 	printBanner()
 
-	srv := service.NewService(cfg, driver)
+	srv, err := service.NewService(cfg, driver)
+
+	if err != nil {
+		println(err.Error())
+		return
+	}
+
 	srv.Run()
 }

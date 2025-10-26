@@ -6,10 +6,12 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/5000K/kingdom-auth/config"
 	"github.com/5000K/kingdom-auth/db"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/oauth2"
 )
 
@@ -18,19 +20,32 @@ type Service struct {
 	log    *slog.Logger
 	db     *db.Driver
 
-	states map[string]string
+	key []byte
 }
 
-func NewService(config *config.Config, db *db.Driver) *Service {
+func NewService(config *config.Config, db *db.Driver) (*Service, error) {
+
 	return &Service{
 		config: config,
 		db:     db,
-		log:    slog.With("source", "auth-service"),
-	}
+
+		key: []byte(config.KeyPhrase),
+
+		log: slog.With("source", "auth-service"),
+	}, nil
 }
 
 func (s *Service) getRedirectUrl(providerName string) string {
 	return fmt.Sprintf("%s/oauth/end/%s", s.config.MainService.PublicUrl, providerName)
+}
+
+func (s *Service) createJwtFor(user *db.User) (string, error) {
+	t := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
+		"uid": user.ID,
+		"exp": time.Now().Add(time.Hour * 24).Unix(), // todo: configurable
+	})
+
+	return t.SignedString(s.key)
 }
 
 func (s *Service) Run() {
@@ -104,7 +119,55 @@ func (s *Service) Run() {
 					return
 				}
 
-				s.log.Info("verified", "subject", userInfo.Subject)
+				// try get auth
+				auth, err := s.db.TryGetAuthentication(provider.Name, userInfo.Subject)
+
+				if err != nil {
+					// new user!
+					usr, err := s.db.CreateUser()
+					if err != nil {
+						c.Writer.WriteHeader(http.StatusInternalServerError)
+						s.log.Info("create user error", "error", err)
+						return
+					}
+
+					auth, err = s.db.CreateAuthenticationFor(usr)
+					if err != nil {
+						c.Writer.WriteHeader(http.StatusInternalServerError)
+						s.log.Info("create auth error", "error", err)
+						return
+					}
+
+					auth.Provider = provider.Name
+					auth.Subject = userInfo.Subject
+					auth.Email = userInfo.Email
+					err = s.db.UpdateAuthentication(auth)
+					if err != nil {
+						c.Writer.WriteHeader(http.StatusInternalServerError)
+						s.log.Info("update auth error", "error", err)
+						return
+					}
+				}
+
+				user, err := s.db.GetUserFor(auth)
+
+				if err != nil {
+					c.Writer.WriteHeader(http.StatusInternalServerError)
+					s.log.Info("get user error", "error", err)
+					return
+				}
+
+				user.LastLogin = time.Now()
+				_ = s.db.UpdateUser(user)
+
+				j, err := s.createJwtFor(user)
+				if err != nil {
+					c.Writer.WriteHeader(http.StatusInternalServerError)
+					s.log.Info("create jwt error", "error", err)
+					return
+				}
+
+				c.SetCookie(s.config.CookieName, j, 3600*24, "/", s.config.CookieDomain, true, true)
 			}
 		}
 	})

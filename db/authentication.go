@@ -9,9 +9,8 @@ type Authentication struct {
 
 	UserID uint
 
-	Provider       string
-	ProviderUserId string
+	Provider string
+	Subject  string
 
-	Email    *string
-	Username *string
+	Email string
 }

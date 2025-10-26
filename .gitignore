@@ -34,3 +34,5 @@ go.work.sum
 **/config.yml
 /bin/**
 /kingdom-auth.db
+/id_ecdsa
+/id_ecdsa.pub

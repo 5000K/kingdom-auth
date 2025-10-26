@@ -59,3 +59,40 @@ func (d *Driver) migrate() error {
 
 	return nil
 }
+
+func (d *Driver) CreateUser() (*User, error) {
+	user := User{}
+	return &user, d.db.Create(&user).Error
+}
+
+func (d *Driver) UpdateUser(user *User) error {
+	return d.db.Save(user).Error
+}
+
+func (d *Driver) TryGetAuthentication(provider string, subject string) (*Authentication, error) {
+	auth := Authentication{}
+	return &auth, d.db.First(&auth, "provider = ? AND subject = ?", provider, subject).Error
+}
+
+func (d *Driver) GetUserFor(auth *Authentication) (*User, error) {
+	user := User{}
+	return &user, d.db.Preload("Authentications").Preload("PublicData").Preload("PrivateData").First(&user, "id = ?", auth.UserID).Error
+}
+func (d *Driver) CreateAuthenticationFor(user *User) (*Authentication, error) {
+	auth := Authentication{
+		UserID: user.ID,
+	}
+
+	err := d.db.Create(&auth).Error
+	if err != nil {
+		return nil, err
+	}
+
+	user.Authentications = append(user.Authentications, auth)
+
+	return &auth, d.db.Save(user).Error
+}
+
+func (d *Driver) UpdateAuthentication(auth *Authentication) error {
+	return d.db.Save(auth).Error
+}
