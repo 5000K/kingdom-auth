@@ -15,9 +15,7 @@ type OAuthConfig struct {
 type Config struct {
 	ConfigPath string `env:"CONFIG_PATH" env-default:"config.yml"`
 
-	KeyPhrase string `yaml:"key_phrase" env:"KEY_Phrase"`
-
-	CookieName   string `yaml:"cookie_name" env:"COOKIE_NAME" env-default:"ka_token"`
+	CookieName   string `yaml:"cookie_name" env:"COOKIE_NAME" env-default:"katok"`
 	CookieDomain string `yaml:"cookie_domain" env:"COOKIE_DOMAIN" env-default:"localhost"`
 
 	Db struct {
@@ -37,6 +35,29 @@ type Config struct {
 	} `yaml:"db"`
 
 	OAuthProviders []OAuthConfig `yaml:"providers"`
+
+	Token struct {
+		KeyPhrase string `yaml:"key_phrase" env:"KEY_Phrase"`
+
+		// Time to live for the refresh token (in seconds). The refresh token is a long-lived cookie and bound to the core domain of the auth service.
+		// It'll be used to generate short-lived auth-tokens that can be used across your service.
+		// Default: 864000 (10 days)
+		RefreshTokenTTL uint `yaml:"refresh_token_ttl" env:"REFRESH_TOKEN_TTL" env-default:"864000"`
+
+		// minimum age of a refresh token before a new one is sent back with any request.
+		//
+		// Default: 86400 (one day)
+		MinAgeForRefresh uint `yaml:"refresh_token_ttl" env:"REFRESH_TOKEN_TTL" env-default:"86400"`
+
+		// Time to live for the auth token (in seconds). Should be very small (1-2 minutes is good).
+		//
+		// Default: 90 (1.5 minutes)
+		AuthTokenTTL uint `yaml:"auth_token_ttl" env:"AUTH_TOKEN_TTL" env-default:"90"`
+
+		Issuer string `yaml:"issuer" env:"JWT_ISSUER" env-default:"kingdom-auth"`
+
+		DefaultAudience string `yaml:"default_audience" env:"JWT_DEFAULT_AUDIENCE" env-default:"default-audience"`
+	} `yaml:"token"`
 
 	MainService struct {
 		Port      int    `yaml:"port" env-default:"14414"`

@@ -2,6 +2,7 @@ package db
 
 import (
 	"log/slog"
+	"time"
 
 	"github.com/5000K/kingdom-auth/config"
 	"github.com/5000K/kingdom-auth/core"
@@ -12,6 +13,7 @@ import (
 type Driver struct {
 	db  *gorm.DB
 	log *slog.Logger
+	cfg *config.Config
 }
 
 func NewDriver(config *config.Config) (*Driver, error) {
@@ -24,6 +26,7 @@ func NewDriver(config *config.Config) (*Driver, error) {
 	driver := &Driver{
 		db:  db,
 		log: slog.With("source", "db.Driver"),
+		cfg: config,
 	}
 
 	if config.Db.RunMigrations {
@@ -47,11 +50,6 @@ func (d *Driver) migrate() error {
 		return err
 	}
 
-	err = d.db.AutoMigrate(&UserData{})
-	if err != nil {
-		return err
-	}
-
 	err = d.db.AutoMigrate(&Authentication{})
 	if err != nil {
 		return err
@@ -61,12 +59,27 @@ func (d *Driver) migrate() error {
 }
 
 func (d *Driver) CreateUser() (*User, error) {
-	user := User{}
+	user := User{
+		Authentications: make([]Authentication, 0),
+		PrivateData:     "{}",
+		PublicData:      "{}",
+		LastLogin:       time.UnixMilli(0),
+	}
+
+	_ = user.SetPrivateUserdata(UserData{
+		"aud": d.cfg.Token.DefaultAudience,
+	})
+
 	return &user, d.db.Create(&user).Error
 }
 
 func (d *Driver) UpdateUser(user *User) error {
 	return d.db.Save(user).Error
+}
+
+func (d *Driver) GetUser(id uint32) (*User, error) {
+	user := User{}
+	return &user, d.db.First(&user, id).Error
 }
 
 func (d *Driver) TryGetAuthentication(provider string, subject string) (*Authentication, error) {
@@ -76,7 +89,7 @@ func (d *Driver) TryGetAuthentication(provider string, subject string) (*Authent
 
 func (d *Driver) GetUserFor(auth *Authentication) (*User, error) {
 	user := User{}
-	return &user, d.db.Preload("Authentications").Preload("PublicData").Preload("PrivateData").First(&user, "id = ?", auth.UserID).Error
+	return &user, d.db.Preload("Authentications").First(&user, "id = ?", auth.UserID).Error
 }
 func (d *Driver) CreateAuthenticationFor(user *User) (*Authentication, error) {
 	auth := Authentication{
