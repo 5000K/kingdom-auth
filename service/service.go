@@ -82,7 +82,7 @@ func (s *Service) readRefreshToken(token string) (jwt.MapClaims, error) {
 	return contents, nil
 }
 
-func (s *Service) createAuthTokenFor(user *db.User) (string, error) {
+func (s *Service) createAuthTokenFor(user *db.User) (string, int64, error) {
 	aud := s.config.Token.DefaultAudience
 
 	pud, err := user.GetPrivateUserdata()
@@ -94,17 +94,21 @@ func (s *Service) createAuthTokenFor(user *db.User) (string, error) {
 		}
 	}
 
+	exp := time.Now().Add(time.Second * time.Duration(s.config.Token.AuthTokenTTL)).Unix()
+
 	t := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
 		"sub":                        fmt.Sprintf("%d", user.ID),
 		"aud":                        aud,
 		"iss":                        s.config.Token.Issuer,
-		"exp":                        time.Now().Add(time.Second * time.Duration(s.config.Token.AuthTokenTTL)).Unix(),
+		"exp":                        exp,
 		"iat":                        time.Now().Unix(),
 		"public-data":                user.PublicData,
 		core.KingdomAuthVersionClaim: core.KingdomAuthVersion,
 	})
 
-	return t.SignedString(s.key)
+	tk, err := t.SignedString(s.key)
+
+	return tk, exp, err
 }
 
 func (s *Service) readAuthToken(token string) (jwt.MapClaims, error) {
@@ -380,7 +384,7 @@ func (s *Service) Run() {
 			}
 		}
 
-		at, err := s.createAuthTokenFor(user)
+		at, exp, err := s.createAuthTokenFor(user)
 
 		if err != nil {
 			c.Writer.WriteHeader(http.StatusInternalServerError)
@@ -390,6 +394,7 @@ func (s *Service) Run() {
 
 		c.JSON(http.StatusOK, gin.H{
 			"token": at,
+			"exp":   exp,
 		})
 	})
 
