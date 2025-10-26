@@ -1,12 +1,20 @@
 package kingdomauth
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
+
+	"github.com/5000K/kingdom-auth/core"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // Client is a client for Kingdom Auth service, intended to be used by other services.
@@ -15,11 +23,12 @@ type Client struct {
 	secret  string
 
 	providers []string
+	publicKey *rsa.PublicKey
 
 	log *slog.Logger
 }
 
-func NewClient(baseURL string, secret string) (*Client, error) {
+func NewClient(baseURL string, secret string, publicKeyPath string) (*Client, error) {
 	log := slog.With("source", "kingdomauth.Client")
 
 	if !strings.HasPrefix(baseURL, "https://") {
@@ -35,14 +44,36 @@ func NewClient(baseURL string, secret string) (*Client, error) {
 		baseURL = baseURL[:len(baseURL)-1]
 	}
 
+	// Load public key
+	publicKeyData, err := os.ReadFile(publicKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read public key file: %w", err)
+	}
+
+	publicKeyBlock, _ := pem.Decode(publicKeyData)
+	if publicKeyBlock == nil {
+		return nil, fmt.Errorf("failed to decode PEM block containing public key")
+	}
+
+	publicKeyInterface, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse public key: %w", err)
+	}
+
+	publicKey, ok := publicKeyInterface.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("not an RSA public key")
+	}
+
 	client := &Client{
 		baseURL:   baseURL,
 		secret:    secret,
 		providers: make([]string, 0),
+		publicKey: publicKey,
 		log:       log,
 	}
 
-	err := client.loadProviders()
+	err = client.loadProviders()
 
 	if err != nil {
 		return nil, err
@@ -96,4 +127,38 @@ func (c *Client) loadProviders() error {
 	c.providers = answer.Providers
 
 	return nil
+}
+
+// ValidateToken validates a JWT token using the public key and returns the claims.
+// It verifies the signature and checks if the token is expired.
+// Returns jwt.MapClaims on success, or an error if validation fails.
+func (c *Client) ValidateToken(token string) (jwt.MapClaims, error) {
+	claims := jwt.MapClaims{}
+
+	tkn, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
+		// Verify the signing method
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return c.publicKey, nil
+	})
+
+	if err != nil {
+		if errors.Is(err, jwt.ErrSignatureInvalid) {
+			return nil, core.ErrInvalidSignature
+		}
+
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, core.ErrTokenExpired
+		}
+
+		c.log.Debug("failed to parse token", "err", err)
+		return nil, core.ErrFailedToParseToken
+	}
+
+	if !tkn.Valid {
+		return nil, core.ErrTokenInvalid
+	}
+
+	return claims, nil
 }
