@@ -1,7 +1,7 @@
 ![# kingdom-auth](./assets/banner.png)
 
 ## About - a manifesto
-> Authentication has gotten too complicated. I can't be the only one thinking that. I don't need all those features bloating my dev-experience. Yes, for big projects they are well worth it. But for my side-projects? Sometimes, I just want an easy to set up service that supports OAuth and allows my other services in the project to authenticate my users reliably.  
+> Authentication has gotten too complicated. I can't be the only one thinking that. I don't need all those features bloating my dev-experience. Yes, for big projects they are well worth it. But for my side-projects? Sometimes, I just want an easy to set up service that supports OAuth and allows my other services in the project to authenticate my users reliably. This gotta be possible with under 250k lines of code.  
 > ~ me, just now
 
 kingdom-auth is that.
