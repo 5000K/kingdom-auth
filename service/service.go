@@ -21,7 +21,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var closeWindowPage = []byte("<html><script>window.close();</script></html>")
+var closeWindowPage = []byte("<html><script>window.close();</script><body><h1>Authentication is complete.</h1>You may now close this window/tab.</body></html>")
 
 type Service struct {
 	config *config.Config
@@ -89,7 +89,7 @@ func NewService(config *config.Config, db *db.Driver) (*Service, error) {
 }
 
 func (s *Service) getRedirectUrl(providerName string) string {
-	return fmt.Sprintf("%s/oauth/end/%s", s.config.MainService.PublicUrl, providerName)
+	return fmt.Sprintf("%s/auth/end/%s", s.config.MainService.PublicUrl, providerName)
 }
 
 func (s *Service) createRefreshTokenFor(user *db.User) (string, error) {
@@ -218,7 +218,7 @@ func (s *Service) Run() {
 		})
 	})
 
-	r.GET("/oauth/begin/:provider", func(c *gin.Context) {
+	r.GET("/auth/begin/:provider", func(c *gin.Context) {
 		prov := c.Param("provider")
 
 		for _, provider := range providers {
@@ -235,7 +235,7 @@ func (s *Service) Run() {
 		})
 	})
 
-	r.GET("/oauth/end/:provider", func(c *gin.Context) {
+	r.GET("/auth/end/:provider", func(c *gin.Context) {
 		prov := c.Param("provider")
 
 		for _, provider := range providers {
@@ -318,6 +318,7 @@ func (s *Service) Run() {
 				c.Writer.Header().Set("Pragma", "no-cache")
 				c.Writer.Header().Set("Expires", "0")
 
+				// TODO: allow to use a custom post-auth redirect via config.
 				_, _ = c.Writer.Write(closeWindowPage)
 				return
 			}
