@@ -12,6 +12,11 @@ type OAuthConfig struct {
 	Scopes       []string `yaml:"scopes"`
 }
 
+type SystemTokenConfig struct {
+	Name  string `yaml:"name"`
+	Token string `yaml:"token"`
+}
+
 type Config struct {
 	ConfigPath string `env:"CONFIG_PATH" env-default:"config.yml"`
 
@@ -67,9 +72,14 @@ type Config struct {
 	} `yaml:"token"`
 
 	MainService struct {
-		Port      int    `yaml:"port" env-default:"14414"`
-		PublicUrl string `yaml:"public_url" env-default:"http://localhost:14414"`
+		Port      int    `yaml:"port" env:"MAIN_PORT" env-default:"14414"`
+		PublicUrl string `yaml:"public_url" env:"MAIN_PUBLIC_URL" env-default:"http://localhost:14414"`
 	} `yaml:"main_service"`
+
+	SystemService struct {
+		Port   int                 `yaml:"port" env:"SYSTEM_PORT" env-default:"14415"`
+		Tokens []SystemTokenConfig `yaml:"tokens"`
+	} `yaml:"system_service"`
 }
 
 func Get() (*Config, error) {
