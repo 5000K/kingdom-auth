@@ -1,0 +1,26 @@
+version: '3.8'
+
+# Simple development setup using SQLite
+# For production, use docker-compose.postgresql.yml with PostgreSQL
+
+services:
+  kingdom-auth:
+    image: ghcr.io/5000k/kingdom-auth:latest
+    # Or build from source:
+    # build: .
+    container_name: kingdom-auth-dev
+    restart: unless-stopped
+    ports:
+      - "14414:14414"  # Main service (user-facing API)
+      - "14415:14415"  # System service (admin/internal API)
+    environment:
+      CONFIG_PATH: /app/config.yml
+    volumes:
+      # Mount your config file
+      - ./config.yml:/app/config.yml:ro
+      # Mount RSA keys for JWT signing
+      - ./private_key.pem:/app/private_key.pem:ro
+      - ./public_key.pem:/app/public_key.pem:ro
+      # Persist SQLite database
+      - ./kingdom-auth.db:/app/kingdom-auth.db
+

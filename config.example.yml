@@ -1,0 +1,73 @@
+# kingdom-auth Configuration Example
+# Copy this file to config.yml and customize for your setup
+
+# Cookie settings
+cookie_name: katok        # if you want custom branding down to the cookie name, change this
+cookie_domain: localhost  # Change to your domain in production (e.g., yourdomain.com)
+
+# CORS - Allowed origins for cross-origin requests
+allowed_origins:
+  - http://localhost:5173
+  - http://localhost:3000
+  # - https://yourdomain.com # In production, only set your actual frontend origin(s) here!
+
+# Database configuration
+#db:
+#  type: sqlite  # Options: sqlite, mysql, postgres
+#  dsn: kingdom-auth.db  # For SQLite: filepath; for others: connection string
+
+# OAuth providers - Add your OAuth providers here
+providers:
+  - name: github
+    url: https://github.com/
+    client_id: your_github_client_id
+    client_secret: your_github_client_secret
+    scopes:
+      - user:email
+
+  # Example: Gitea/Forgejo instance
+  # - name: forgejo
+  #   url: https://forgejo.example.com/
+  #   client_id: your_forgejo_client_id
+  #   client_secret: your_forgejo_client_secret
+
+  # Example: GitLab
+  # - name: gitlab
+  #   url: https://gitlab.com/
+  #   client_id: your_gitlab_client_id
+  #   client_secret: your_gitlab_client_secret
+  #  scopes:
+  #    - user:email
+
+# Token configuration
+token:
+  # RSA key paths for JWT signing (RS512)
+  # Generate with: 
+  #   openssl genrsa -out private_key.pem 4096
+  #   openssl rsa -in private_key.pem -pubout -out public_key.pem
+  private_key_path: private_key.pem
+  public_key_path: public_key.pem
+  
+  # Token lifetimes (in seconds)
+  refresh_token_ttl: 864000  # 10 days - stored as HTTP-only cookie
+  auth_token_ttl: 90  # 1.5 minutes - short-lived JWT for API access
+  
+  # JWT settings
+  issuer: kingdom-auth                # Change to your service name in production
+  default_audience: default-audience  # You can set an audience per-user via the service-api, this is just the default
+
+# Main service configuration (user-facing API)
+main_service:
+  port: 14414
+  public_url: http://localhost:14414  # Change to your public URL in production
+
+# System service (admin/internal API)
+system_service:
+  port: 14415
+  tokens:
+    - name: admin
+      token: generate_a_secure_random_token_here
+    # Add more system tokens as needed
+    # - name: monitoring
+    #   token: another_secure_token
+

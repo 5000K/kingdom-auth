@@ -20,8 +20,9 @@ type SystemTokenConfig struct {
 type Config struct {
 	ConfigPath string `env:"CONFIG_PATH" env-default:"config.yml"`
 
-	CookieName   string `yaml:"cookie_name" env:"COOKIE_NAME" env-default:"katok"`
-	CookieDomain string `yaml:"cookie_domain" env:"COOKIE_DOMAIN" env-default:"localhost"`
+	CookieName     string   `yaml:"cookie_name" env:"COOKIE_NAME" env-default:"katok"`
+	CookieDomain   string   `yaml:"cookie_domain" env:"COOKIE_DOMAIN" env-default:"localhost"`
+	AllowedOrigins []string `yaml:"allowed_origins" env:"ALLOWED_ORIGINS" env-default:"http://localhost:14414"`
 
 	Db struct {
 		// supported: "sqlite", "mysql", "postgres"

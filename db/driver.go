@@ -79,7 +79,7 @@ func (d *Driver) UpdateUser(user *User) error {
 
 func (d *Driver) GetUser(id uint32) (*User, error) {
 	user := User{}
-	return &user, d.db.First(&user, id).Error
+	return &user, d.db.Preload("Authentications").First(&user, id).Error
 }
 
 func (d *Driver) TryGetAuthentication(provider string, subject string) (*Authentication, error) {

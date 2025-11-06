@@ -16,6 +16,8 @@ import (
 	"github.com/5000K/kingdom-auth/config"
 	"github.com/5000K/kingdom-auth/core"
 	"github.com/5000K/kingdom-auth/db"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/oauth2"
@@ -205,6 +207,17 @@ func (s *Service) Run() {
 	}
 
 	r := gin.New()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     s.config.AllowedOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           15 * time.Minute,
+	}))
+
+	r.Use(logger.SetLogger())
 
 	r.GET("/providers", func(c *gin.Context) {
 		list := make([]string, 0)
@@ -444,9 +457,20 @@ func (s *Service) Run() {
 			return
 		}
 
+		// search email from authentications
+
+		email := ""
+		for _, auth := range user.Authentications {
+			if auth.Email != "" {
+				email = auth.Email
+				break
+			}
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"token": at,
 			"exp":   exp,
+			"email": email,
 		})
 	})
 
