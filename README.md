@@ -119,12 +119,6 @@ Make sure to only set an option either in the config file or via environment var
 | `SYSTEM_PORT`            | System service port                          | `14415`                  |
 
 
-Start the services:
-
-```bash
-docker-compose up -d
-```
-
 ### Database Connection Strings
 
 #### SQLite
