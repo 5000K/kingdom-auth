@@ -119,7 +119,7 @@ Make sure to only set an option either in the config file or via environment var
 | `SYSTEM_PORT`            | System service port                          | `14415`                  |
 
 
-### Database Connection Strings
+### Examples: Database Connection Strings
 
 #### SQLite
 ```yaml
