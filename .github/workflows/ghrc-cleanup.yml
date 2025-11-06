@@ -1,0 +1,16 @@
+name: Cleanup
+
+on:
+  schedule:
+    - cron: "0 0 * * 2"
+  
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: dataaxiom/ghcr-cleanup-action@v1
+      with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          older-than: 6 months
+          delete-ghost-images: true
+          delete-untagged: true
