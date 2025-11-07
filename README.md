@@ -2,6 +2,8 @@
 
 [![Go](https://github.com/5000K/kingdom-auth/actions/workflows/go.yml/badge.svg)](https://github.com/5000K/kingdom-auth/actions/workflows/go.yml) [![Docker](https://github.com/5000K/kingdom-auth/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/5000K/kingdom-auth/actions/workflows/docker-publish.yml)
 
+> ! the current version of kingdom-auth is a open preview. API and features are not complete or final at this point in time. Don't use it for important projects yet.
+
 ## About - a manifesto
 kingdom-auth is a minimal authentication backend written in go (golang). It aims to provide the simplest dev-experience possible without sacrificing on user experience or security. Selfhosted. No lock-in. If you can scale postgres, you can scale kingdom-auth.
 
