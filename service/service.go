@@ -474,7 +474,7 @@ func (s *Service) Run() {
 		})
 	})
 
-	r.GET("/logout", func(c *gin.Context) {
+	r.GET("/auth/logout", func(c *gin.Context) {
 		c.SetCookie(s.config.CookieName, "", -1, "/", s.config.CookieDomain, true, true)
 		c.JSON(http.StatusOK, gin.H{
 			"message": "logged out",
