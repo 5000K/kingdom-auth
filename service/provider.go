@@ -2,9 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"io"
-	"net/http"
 
 	"github.com/5000K/kingdom-auth/config"
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -18,22 +15,12 @@ type Provider struct {
 }
 
 func createProviderManually(config *config.OAuthConfig, redirectUrl string) (*Provider, error) {
-	resp, err := http.Get(config.DiscoveryUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-
-		}
-	}(resp.Body)
-
 	// Parse config from JSON metadata.
-	c := &oidc.ProviderConfig{}
-	if err := json.NewDecoder(resp.Body).Decode(c); err != nil {
-		return nil, err
+	c := &oidc.ProviderConfig{
+		IssuerURL:   config.Url,
+		AuthURL:     config.Endpoints.AuthURL,
+		TokenURL:    config.Endpoints.TokenURL,
+		UserInfoURL: config.Endpoints.UserInfoURL,
 	}
 
 	p := c.NewProvider(context.Background())
@@ -53,7 +40,7 @@ func createProviderManually(config *config.OAuthConfig, redirectUrl string) (*Pr
 
 func NewProvider(config *config.OAuthConfig, redirectUrl string) (*Provider, error) {
 	// Support for manual OIDC discovery URL
-	if config.DiscoveryUrl != "" {
+	if config.SkipDiscovery {
 		return createProviderManually(config, redirectUrl)
 	}
 
