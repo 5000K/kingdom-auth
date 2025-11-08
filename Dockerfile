@@ -6,14 +6,10 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o kingdom-auth ./main
+RUN go build -o kingdomauth ./main
 
 FROM alpine:latest
 
-WORKDIR /app
+COPY --from=builder /kingdomauth .
 
-COPY --from=builder /app/kingdom-auth .
-
-ENV CONFIG_PATH=/app/config.yml
-
-CMD ["./kingdom-auth"]
+CMD ["/kingdomauth"]
