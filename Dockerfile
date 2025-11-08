@@ -6,9 +6,9 @@ COPY . .
 
 RUN go mod download
 
-RUN CGO_ENABLED=0 go build -o kingdomauth ./main
+RUN go build -o kingdomauth ./main
 
-FROM alpine:latest
+FROM debian:latest
 
 WORKDIR /app
 
