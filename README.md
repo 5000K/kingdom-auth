@@ -148,3 +148,25 @@ The repository includes example configuration files to help you get started:
 - **`docker-compose.dev.yml`** - Simple development setup with SQLite
 
 Copy and customize these files for your deployment.
+
+## Docker Build
+
+### Building the Docker Image
+
+To build the Docker image locally:
+
+```bash
+# Generate vendored dependencies (required for the build)
+go mod vendor
+
+# Build the image
+docker build -t kingdom-auth .
+```
+
+### Why Debian Base Image?
+
+The Dockerfile uses `debian:bookworm-slim` instead of Alpine Linux because kingdom-auth uses SQLite (via `gorm.io/driver/sqlite`), which requires CGO. This creates a dynamically linked binary that needs glibc. Alpine uses musl libc, which causes compatibility issues. Debian provides the necessary glibc while maintaining a relatively small image size.
+
+### Vendored Dependencies
+
+The Docker build uses vendored dependencies (`vendor/` directory) for reproducible builds and to avoid potential network issues during the build process. Make sure to run `go mod vendor` before building the Docker image.
