@@ -25,12 +25,13 @@ providers:
     client_secret: your_github_client_secret
     scopes:
       - user:email
-
-  # Example: Gitea/Forgejo instance
-  # - name: forgejo
-  #   url: https://forgejo.example.com/
-  #   client_id: your_forgejo_client_id
-  #   client_secret: your_forgejo_client_secret
+    # github uses non-standard endpoints, so we specify them explicitly and disable discovery
+    skip_discovery: true
+    endpoints:
+      auth: https://github.com/login/oauth/authorize
+      token: https://github.com/login/oauth/access_token
+      jwks: https://token.actions.githubusercontent.com/.well-known/jwks
+      user_info: https://api.github.com/user
 
   # Example: GitLab
   # - name: gitlab
@@ -39,6 +40,12 @@ providers:
   #   client_secret: your_gitlab_client_secret
   #  scopes:
   #    - user:email
+
+  # Example: Gitea/Forgejo instance
+  # - name: forgejo
+  #   url: https://forgejo.example.com/
+  #   client_id: your_forgejo_client_id
+  #   client_secret: your_forgejo_client_secret
 
 # Token configuration
 token:

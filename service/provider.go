@@ -17,10 +17,12 @@ type Provider struct {
 func createProviderManually(config *config.OAuthConfig, redirectUrl string) (*Provider, error) {
 	// Parse config from JSON metadata.
 	c := &oidc.ProviderConfig{
-		IssuerURL:   config.Url,
-		AuthURL:     config.Endpoints.AuthURL,
-		TokenURL:    config.Endpoints.TokenURL,
-		UserInfoURL: config.Endpoints.UserInfoURL,
+		IssuerURL:     config.Url,
+		AuthURL:       config.Endpoints.AuthURL,
+		TokenURL:      config.Endpoints.TokenURL,
+		UserInfoURL:   config.Endpoints.UserInfoURL,
+		JWKSURL:       config.Endpoints.JWKSURL,
+		DeviceAuthURL: config.Endpoints.DeviceAuthURL,
 	}
 
 	p := c.NewProvider(context.Background())

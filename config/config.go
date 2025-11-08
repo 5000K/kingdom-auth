@@ -11,9 +11,11 @@ type OAuthConfig struct {
 	SkipDiscovery bool `yaml:"skip_discovery"`
 
 	Endpoints struct {
-		AuthURL     string `yaml:"auth"`
-		TokenURL    string `yaml:"token"`
-		UserInfoURL string `yaml:"user_info"`
+		AuthURL       string `yaml:"auth"`
+		TokenURL      string `yaml:"token"`
+		UserInfoURL   string `yaml:"user_info"`
+		JWKSURL       string `yaml:"jwks"`
+		DeviceAuthURL string `yaml:"device_auth"`
 	} `yaml:"endpoints"`
 
 	ClientId     string   `yaml:"client_id"`
