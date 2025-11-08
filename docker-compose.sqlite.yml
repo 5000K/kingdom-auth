@@ -1,11 +1,9 @@
-version: '3.8'
-
 # Simple development setup using SQLite
 # For production, use docker-compose.postgresql.yml with PostgreSQL
 
 services:
   kingdom-auth:
-    image: ghcr.io/5000k/kingdom-auth:latest
+    image: ghcr.io/5000k/kingdom-auth:main
     # Or build from source:
     # build: .
     container_name: kingdom-auth-dev

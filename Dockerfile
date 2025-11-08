@@ -6,10 +6,12 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o kingdomauth ./main
+RUN CGO_ENABLED=0 go build -o kingdomauth ./main
 
 FROM alpine:latest
 
-COPY --from=builder /app/kingdomauth /kingdomauth
+WORKDIR /app
 
-CMD ["/kingdomauth"]
+COPY --from=builder /app/kingdomauth .
+
+CMD ["./kingdomauth"]

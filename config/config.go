@@ -60,7 +60,7 @@ type Config struct {
 		// minimum age of a refresh token before a new one is sent back with any request.
 		//
 		// Default: 86400 (one day)
-		MinAgeForRefresh uint `yaml:"refresh_token_ttl" env:"REFRESH_TOKEN_TTL" env-default:"86400"`
+		MinAgeForRefresh uint `yaml:"refresh_token_min_age" env:"REFRESH_TOKEN_TTL" env-default:"86400"`
 
 		// Time to live for the auth token (in seconds). Should be very small (1-2 minutes is good).
 		//
