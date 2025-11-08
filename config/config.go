@@ -5,8 +5,10 @@ import (
 )
 
 type OAuthConfig struct {
-	Name         string   `yaml:"name"`
-	Url          string   `yaml:"url"`
+	Name string `yaml:"name"`
+	Url  string `yaml:"url"`
+	// OpenID Connect Discovery URL - if set, this will be used instead of Url/.well-known/openid-configuration to fetch provider configuration
+	DiscoveryUrl string   `yaml:"discovery_url"`
 	ClientId     string   `yaml:"client_id"`
 	ClientSecret string   `yaml:"client_secret"`
 	Scopes       []string `yaml:"scopes"`

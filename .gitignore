@@ -38,3 +38,4 @@ go.work.sum
 /id_ecdsa.pub
 /private_key.pem
 /public_key.pem
+/kingdomauth
