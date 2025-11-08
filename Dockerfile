@@ -10,6 +10,6 @@ RUN go build -o kingdomauth ./main
 
 FROM alpine:latest
 
-COPY --from=builder /kingdomauth .
+COPY --from=builder /app/kingdomauth /kingdomauth
 
 CMD ["/kingdomauth"]
