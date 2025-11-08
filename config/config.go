@@ -11,9 +11,9 @@ type OAuthConfig struct {
 	SkipDiscovery bool `yaml:"skip_discovery"`
 
 	Endpoints struct {
-		AuthURL     string `yaml:"auth_url"`
-		TokenURL    string `yaml:"token_url"`
-		UserInfoURL string `yaml:"user_info_url"`
+		AuthURL     string `yaml:"auth"`
+		TokenURL    string `yaml:"token"`
+		UserInfoURL string `yaml:"user_info"`
 	} `yaml:"endpoints"`
 
 	ClientId     string   `yaml:"client_id"`
