@@ -23,7 +23,7 @@ providers:
     client_id: your_github_client_id
     client_secret: your_github_client_secret
     scopes:
-      - user:email
+      - openid
 
   # Example: Gitea/Forgejo instance
   # - name: forgejo
