@@ -2,13 +2,10 @@
 
 [![Go](https://github.com/5000K/kingdom-auth/actions/workflows/go.yml/badge.svg)](https://github.com/5000K/kingdom-auth/actions/workflows/go.yml) [![Docker](https://github.com/5000K/kingdom-auth/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/5000K/kingdom-auth/actions/workflows/docker-publish.yml)
 
+> ! the current version of kingdom-auth is an open preview. API and features are not complete or final at this point in time. Don't use it for important projects yet.
+
 ## About - a manifesto
-> Authentication has gotten too complicated. I can't be the only one thinking that. I don't need all those features bloating my dev-experience. Yes, for big projects they are well worth it. But for my side-projects? Sometimes, I just want an easy to set up service that supports OAuth and allows my other services in the project to authenticate my users reliably. This gotta be possible with under 250k lines of code.  
-> ~ me, just now
-
-kingdom-auth is that.
-
-kingdom-auth is a minimal authentication backend written in go (golang). It aims to provide the simplest dev-experience possible without sacrificing on user experience or security.
+kingdom-auth is a minimal authentication backend written in go (golang). It aims to provide the simplest dev-experience possible without sacrificing on user experience or security. Selfhosted. No lock-in. If you can scale postgres, you can scale kingdom-auth.
 
 The single core mission of kingdom-auth is to provide a seamless, quick to set up and integrate way to authenticate your users. It's JWTs are simple to validate in your own services, it's slim typescript library is quickly integrated into your frontend. Even for things beyond that: implementing a usable kingdom-auth client consists of implementing three endpoints and doing some basic, scheduled token-refreshing in the background.
 
